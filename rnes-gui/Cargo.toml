@@ -1,0 +1,9 @@
+[package]
+name = "rnes-gui"
+version = "0.1.0"
+authors = ["decden <decden@users.noreply.github.com>"]
+
+[dependencies]
+rnes-core = { path = "../rnes-core" }
+minifb = "0.10.3"
+cpal = "0.7.0"

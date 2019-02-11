@@ -1,0 +1,6 @@
+[package]
+name = "rnes-core"
+version = "0.1.0"
+authors = ["decden <decden@users.noreply.github.com>"]
+
+[dependencies]
