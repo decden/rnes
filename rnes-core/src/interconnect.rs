@@ -16,6 +16,13 @@ pub trait MemoryBus {
     /// Reades addr and addr+1
     fn read_word(&mut self, addr: u16) -> u16 {
         let b1 = self.read_byte(addr);
+        let b2 = self.read_byte(addr + 1);
+        (b1 as u16) | ((b2 as u16) << 8)
+    }
+
+    /// Reades addr and addr+1 on the same page (used for indirect jumps)
+    fn read_word_same_page(&mut self, addr: u16) -> u16 {
+        let b1 = self.read_byte(addr);
         let b2 = self.read_byte((addr & 0xff00) + ((addr + 1) & 0x00ff));
         (b1 as u16) | ((b2 as u16) << 8)
     }

@@ -7,7 +7,7 @@ pub const CPU_FREQUENCY: f64 = 1_789_773.0;
 pub const APU_SAMPLING_FREQUENCY: f64 = 41_000.0;
 
 pub struct Nes {
-    cpu: Cpu,
+    pub cpu: Cpu,
     pub interconnect: Interconnect,
 }
 

@@ -180,7 +180,12 @@ impl Mapper {
         if self.chr_banks == 0 {
             self.chr_ram[offset as usize] = value;
         } else {
-            panic!("Writing to readonly CHR memory!");
+            log_warn!(
+                "mapper",
+                "Writing to readonly CHR address 0x{:04X} value=0x{:02X}",
+                offset,
+                value
+            );
         }
     }
 }

@@ -238,7 +238,7 @@ impl Cpu {
     #[allow(dead_code)]
     fn print_opcode(&mut self, interconnect: &mut impl MemoryBus, opcode: u8) {
         let decoded = Cpu::decode(opcode);
-        let pc = self.reg_pc;
+        let pc = self.reg_pc - 1;
 
         print!(
             "A:{:02X} X:{:02X} Y:{:02X} P:{}{}{}{}{}{}{}  ",
@@ -269,7 +269,7 @@ impl Cpu {
             AddrMode::AbsY => print!("${:04X},Y", interconnect.read_word(pc)),
             AddrMode::IndX => print!("(${:02X},X)", interconnect.read_byte(pc)),
             AddrMode::IndY => print!("(${:02X}),Y", interconnect.read_byte(pc)),
-            AddrMode::Ind => print!("(${:04X})", interconnect.read_word(pc)),
+            AddrMode::Ind => print!("(${:04X})", interconnect.read_word_same_page(pc)),
             AddrMode::None => {}
         };
         println!("");
@@ -402,7 +402,7 @@ impl Cpu {
             0x6C => {
                 // JMP ind
                 let addr = self.load_immediate_word(interconnect);
-                self.reg_pc = interconnect.read_word(addr);
+                self.reg_pc = interconnect.read_word_same_page(addr);
             }
             0x6D => self.instr_adc(interconnect, AddrMode::Abs), // ADC #abs
             0x6E => self.instr_ror(interconnect, AddrMode::Abs), // ROR #abs

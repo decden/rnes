@@ -1,5 +1,5 @@
-use mapper::Mapper;
-use sinks::*;
+use crate::mapper::Mapper;
+use crate::sinks::*;
 
 use std::cmp::min;
 
@@ -364,7 +364,7 @@ impl Ppu {
                                 tile_y,
                             );
                             if color != 0 {
-                                if oam_entry.oam_entry_index == 0 && bg_transparent {
+                                if oam_entry.oam_entry_index == 0 && !bg_transparent {
                                     self.flag_sprite_zero_hit = true;
                                 }
                                 let palette = oam_entry.palette as usize;
@@ -402,6 +402,9 @@ impl Ppu {
     }
 
     pub fn get_background_pixel_at(&mut self, mapper: &Mapper, x: u64, y: u64) -> (u32, bool) {
+        let nametable_offset = ((x / 256) * 0x400 + (y / 240) * 0x800) as usize;
+        let nametable_offset =
+            (nametable_offset + self.reg_ctrl.base_nametable_address as usize - 0x2000) & 0x0FFF;
         let x = x % 256;
         let y = y % 240;
         let tile_x = (x % 8) as u8;
@@ -409,7 +412,9 @@ impl Ppu {
 
         let tile_row = y / 8;
         let tile_col = x / 8;
-        let nametable_entry = self.vram[(tile_row * 32 + tile_col) as usize];
+        let nametable_addr = nametable_offset as usize + (tile_row * 32 + tile_col) as usize;
+        let nametable_addr = mapper.get_physical_nametable_addr(nametable_addr);
+        let nametable_entry = self.vram[nametable_addr];
         let pattern_table_addr = self.reg_ctrl.background_pattern_table_address;
         let color_index =
             self.get_tile_pixel(mapper, pattern_table_addr, nametable_entry, tile_x, tile_y);
