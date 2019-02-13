@@ -2,7 +2,7 @@ use frame_sink::MostRecentFrameSink;
 
 use rnes_core::game_pad::Button;
 use rnes_core::sinks::{AudioFrame, Sink, SinkRef};
-use rnes_core::Mapper;
+use rnes_core::Cartridge;
 use rnes_core::Nes;
 use time_source::TimeSource;
 
@@ -34,7 +34,7 @@ pub struct Emulator {
 
 impl Emulator {
     pub fn new(
-        rom: Mapper,
+        cartridge: Cartridge,
         audio_sink: Box<SinkRef<[AudioFrame]>>,
         time_source: Box<TimeSource>,
     ) -> Emulator {
@@ -52,7 +52,7 @@ impl Emulator {
             )
             .unwrap(),
 
-            nes: Nes::new(rom),
+            nes: Nes::new(cartridge),
 
             audio_sink: audio_sink,
             time_source: time_source,

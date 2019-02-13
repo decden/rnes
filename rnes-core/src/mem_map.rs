@@ -18,9 +18,11 @@ const REG_APUPULSE2SWEEPUNIT: u16 = 0x4005;
 const REG_APUPULSE2TIMERLOW: u16 = 0x4006;
 const REG_APUPULSE2LCTH: u16 = 0x4007;
 const REG_APUTRIGCONTROL: u16 = 0x4008;
+const REG_APUTRIGUNUSED: u16 = 0x4009;
 const REG_APUTRIGTIMERLOW: u16 = 0x400A;
 const REG_APUTRIGLCTH: u16 = 0x400B;
 const REG_APUNOISECONTROL: u16 = 0x400C;
+const REG_APUNOISEUNUSED: u16 = 0x400D;
 const REG_APUNOISEPERIOD: u16 = 0x400E;
 const REG_APUNOISELC: u16 = 0x400F;
 const REG_APUDMCCONTROL: u16 = 0x4010;
@@ -49,6 +51,7 @@ pub enum Addr {
     RegPpuAddr,
     RegPpuData,
     RegApuChannelControl(ApuChannel),
+    RegApuChannelUnused(ApuChannel),
     RegApuSweepUnit(ApuChannel),
     RegApuTimerLow(ApuChannel),
     RegApuLengthCouterTimerHigh(ApuChannel),
@@ -94,9 +97,11 @@ pub fn map_addr(addr: u16) -> Addr {
         REG_APUPULSE2TIMERLOW => Addr::RegApuTimerLow(ApuChannel::Pulse2),
         REG_APUPULSE2LCTH => Addr::RegApuLengthCouterTimerHigh(ApuChannel::Pulse2),
         REG_APUTRIGCONTROL => Addr::RegApuChannelControl(ApuChannel::Triangle),
+        REG_APUTRIGUNUSED => Addr::RegApuChannelUnused(ApuChannel::Triangle),
         REG_APUTRIGTIMERLOW => Addr::RegApuTimerLow(ApuChannel::Triangle),
         REG_APUTRIGLCTH => Addr::RegApuLengthCouterTimerHigh(ApuChannel::Triangle),
         REG_APUNOISECONTROL => Addr::RegApuChannelControl(ApuChannel::Noise),
+        REG_APUNOISEUNUSED => Addr::RegApuChannelUnused(ApuChannel::Noise),
         REG_APUNOISEPERIOD => Addr::RegApuTimerLow(ApuChannel::Noise),
         REG_APUNOISELC => Addr::RegApuLengthCouterTimerHigh(ApuChannel::Noise),
         REG_APUDMCCONTROL => Addr::RegApuDmcControl,

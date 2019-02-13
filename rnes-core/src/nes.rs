@@ -1,6 +1,6 @@
+use cartridge::Cartridge;
 use cpu::Cpu;
 use interconnect::Interconnect;
-use mapper::Mapper;
 use sinks::*;
 
 pub const CPU_FREQUENCY: f64 = 1_789_773.0;
@@ -12,10 +12,10 @@ pub struct Nes {
 }
 
 impl Nes {
-    pub fn new(rom: Mapper) -> Nes {
+    pub fn new(cartridge: Cartridge) -> Nes {
         let mut nes = Nes {
             cpu: Cpu::new(),
-            interconnect: Interconnect::new(rom),
+            interconnect: Interconnect::new(cartridge),
         };
         nes.cpu.reset(&mut nes.interconnect);
         nes

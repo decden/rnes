@@ -238,7 +238,7 @@ impl Cpu {
     #[allow(dead_code)]
     fn print_opcode(&mut self, interconnect: &mut impl MemoryBus, opcode: u8) {
         let decoded = Cpu::decode(opcode);
-        let pc = self.reg_pc - 1;
+        let pc = self.reg_pc;
 
         print!(
             "A:{:02X} X:{:02X} Y:{:02X} P:{}{}{}{}{}{}{}  ",
@@ -254,7 +254,7 @@ impl Cpu {
             if self.flag_carry { "C" } else { "-" }
         );
 
-        print!("{:04X} {:3} ", pc, decoded.0);
+        print!("{:04X} {:3} ", pc - 1, decoded.0);
         match decoded.3 {
             AddrMode::A => print!("A"),
             AddrMode::X => print!("X"),

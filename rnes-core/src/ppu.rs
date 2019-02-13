@@ -1,4 +1,4 @@
-use crate::mapper::Mapper;
+use crate::cartridge::Cartridge;
 use crate::sinks::*;
 
 use std::cmp::min;
@@ -163,15 +163,15 @@ impl Ppu {
         self.reg_address_latch = !self.reg_address_latch;
     }
 
-    pub fn write_data_reg(&mut self, mapper: &mut Mapper, value: u8) {
+    pub fn write_data_reg(&mut self, cartridge: &mut Cartridge, value: u8) {
         if self.reg_address_latch {
             panic!("Writing to incomplete address!!");
         }
         // 0x2000 to 0x2fff is normally mapped to vram with a mirroring configuration provided by the cartridge...
         match self.reg_address {
-            0x0000...0x1fff => mapper.write_chr_byte(self.reg_address, value),
+            0x0000...0x1fff => cartridge.write_chr_byte(self.reg_address, value),
             0x2000...0x3eff => {
-                let address = mapper.get_physical_nametable_addr(self.reg_address as usize);
+                let address = cartridge.get_physical_nametable_addr(self.reg_address as u16);
                 self.vram[address as usize] = value;
             }
             0x3f00...0x3fff => {
@@ -199,15 +199,15 @@ impl Ppu {
         self.oam[self.reg_oam_addr as usize]
     }
 
-    pub fn read_data_reg(&mut self, mapper: &mut Mapper) -> u8 {
+    pub fn read_data_reg(&mut self, cartridge: &mut Cartridge) -> u8 {
         match self.reg_address {
             0x0000...0x1FFF => {
                 let buffered_value = self.ppudata_read_buffer;
-                self.ppudata_read_buffer = mapper.read_chr_byte(self.reg_address);
+                self.ppudata_read_buffer = cartridge.read_chr_byte(self.reg_address);
                 buffered_value
             }
             0x2000...0x3eff => {
-                let address = mapper.get_physical_nametable_addr(self.reg_address as usize);
+                let address = cartridge.get_physical_nametable_addr(self.reg_address as u16);
                 self.vram[address as usize]
             }
             _ => panic!("Unknown PPU memory location {:04X}", self.reg_address),
@@ -217,7 +217,7 @@ impl Ppu {
     pub fn cycles(
         &mut self,
         cycles: u64,
-        mapper: &Mapper,
+        cartridge: &Cartridge,
         frame_sink: &mut Sink<VideoFrame>,
     ) -> (bool, Option<u16>) {
         let ppu_cycles = cycles * 3;
@@ -230,8 +230,8 @@ impl Ppu {
         for scanline in old_scanline..new_scanline {
             match scanline {
                 // Pre-render
-                0 => self.process_prerender_scanline(mapper),
-                1...240 => self.process_scanline(mapper, scanline - 1),
+                0 => self.process_prerender_scanline(cartridge),
+                1...240 => self.process_scanline(cartridge, scanline - 1),
                 241 => {
                     frame_sink.append(self.next_frame.take().unwrap());
                 }
@@ -258,7 +258,7 @@ impl Ppu {
         (trigger_nmi, self.dma_write.take())
     }
 
-    pub fn fill_oam_buffer(&mut self, _mapper: &Mapper, scanline: u64) {
+    pub fn fill_oam_buffer(&mut self, _cartridge: &Cartridge, scanline: u64) {
         // Search the first 8 sprites which fit into the
         let mut sprite = 0;
         for i in 0..64 {
@@ -291,19 +291,19 @@ impl Ppu {
         }
     }
 
-    pub fn process_prerender_scanline(&mut self, _mapper: &Mapper) {
+    pub fn process_prerender_scanline(&mut self, _cartridge: &Cartridge) {
         self.flag_sprite_zero_hit = false;
         self.next_frame = Some(vec![0xff000000; 256 * 240].into_boxed_slice());
         self.oam_buffer = [None; 8];
     }
 
-    pub fn process_scanline(&mut self, mapper: &Mapper, scanline: u64) {
+    pub fn process_scanline(&mut self, cartridge: &Cartridge, scanline: u64) {
         for x in 0..256 as u64 {
             let virtual_y = scanline + self.reg_scroll_y;
             let virtual_x = x + self.reg_scroll_x;
 
             let (bg_pixel, bg_transparent) =
-                self.get_background_pixel_at(mapper, virtual_x, virtual_y);
+                self.get_background_pixel_at(cartridge, virtual_x, virtual_y);
             if let Some(frame) = self.next_frame.as_mut() {
                 frame[(scanline * 256 + x) as usize] = bg_pixel;
             }
@@ -357,7 +357,7 @@ impl Ppu {
                             }
 
                             let color = self.get_tile_pixel(
-                                mapper,
+                                cartridge,
                                 pattern_table,
                                 index,
                                 tile_x as u8,
@@ -379,12 +379,12 @@ impl Ppu {
                 }
             }
         }
-        self.fill_oam_buffer(mapper, scanline);
+        self.fill_oam_buffer(cartridge, scanline);
     }
 
     pub fn get_tile_pixel(
         &mut self,
-        mapper: &Mapper,
+        cartridge: &Cartridge,
         pattern_table_addr: u16,
         tile_index: u8,
         tile_x: u8,
@@ -392,16 +392,21 @@ impl Ppu {
     ) -> u8 {
         assert!(tile_x < 8);
         assert!(tile_y < 8);
-        let byte1 = mapper
+        let byte1 = cartridge
             .read_chr_byte(pattern_table_addr + (tile_index as u16 * 16 + tile_y as u16) as u16);
-        let byte2 = mapper.read_chr_byte(
+        let byte2 = cartridge.read_chr_byte(
             pattern_table_addr + (tile_index as u16 * 16 + tile_y as u16 + 8) as u16,
         );
 
         ((byte1 >> (7 - tile_x)) & 0b1) | ((byte2 >> (7 - tile_x)) & 0b1) << 1
     }
 
-    pub fn get_background_pixel_at(&mut self, mapper: &Mapper, x: u64, y: u64) -> (u32, bool) {
+    pub fn get_background_pixel_at(
+        &mut self,
+        cartridge: &Cartridge,
+        x: u64,
+        y: u64,
+    ) -> (u32, bool) {
         let nametable_offset = ((x / 256) * 0x400 + (y / 240) * 0x800) as usize;
         let nametable_offset =
             (nametable_offset + self.reg_ctrl.base_nametable_address as usize - 0x2000) & 0x0FFF;
@@ -412,12 +417,18 @@ impl Ppu {
 
         let tile_row = y / 8;
         let tile_col = x / 8;
-        let nametable_addr = nametable_offset as usize + (tile_row * 32 + tile_col) as usize;
-        let nametable_addr = mapper.get_physical_nametable_addr(nametable_addr);
-        let nametable_entry = self.vram[nametable_addr];
+        let nametable_addr =
+            0x2000 + nametable_offset as usize + (tile_row * 32 + tile_col) as usize;
+        let nametable_addr = cartridge.get_physical_nametable_addr(nametable_addr as u16);
+        let nametable_entry = self.vram[nametable_addr as usize];
         let pattern_table_addr = self.reg_ctrl.background_pattern_table_address;
-        let color_index =
-            self.get_tile_pixel(mapper, pattern_table_addr, nametable_entry, tile_x, tile_y);
+        let color_index = self.get_tile_pixel(
+            cartridge,
+            pattern_table_addr,
+            nametable_entry,
+            tile_x,
+            tile_y,
+        );
 
         let attrib_col = tile_col / 4;
         let attrib_row = tile_row / 4;

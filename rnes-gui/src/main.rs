@@ -9,7 +9,7 @@ mod time_source;
 
 use cpal_driver::CpalDriver;
 use emulator::Emulator;
-use rnes_core::Mapper;
+use rnes_core::Cartridge;
 use rnes_core::APU_SAMPLING_FREQUENCY;
 
 use std::env;
@@ -21,8 +21,8 @@ fn main() {
     let time_source = audio_driver.time_source();
 
     let args: Vec<String> = env::args().collect();
-    let rom = Mapper::from_ines_file(&args[1]);
-    let mut emulator = Emulator::new(rom, audio_buffer_sink, time_source);
+    let cartridge = Cartridge::from_ines_file(&args[1]);
+    let mut emulator = Emulator::new(cartridge, audio_buffer_sink, time_source);
 
     emulator.run();
 }

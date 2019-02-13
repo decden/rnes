@@ -1,6 +1,6 @@
 use apu::Apu;
+use cartridge::Cartridge;
 use game_pad::GamePad;
-use mapper::Mapper;
 use mem_map;
 use mem_map::Addr;
 use ppu::Ppu;
@@ -36,17 +36,17 @@ pub trait MemoryBus {
 
 pub struct Interconnect {
     ram: Box<[u8]>,
-    rom: Mapper,
+    cartridge: Cartridge,
     ppu: Ppu,
     apu: Apu,
     pub game_pad: GamePad,
 }
 
 impl Interconnect {
-    pub fn new(rom: Mapper) -> Interconnect {
+    pub fn new(cartridge: Cartridge) -> Interconnect {
         Interconnect {
             ram: vec![0; 0x0800].into_boxed_slice(),
-            rom: rom,
+            cartridge: cartridge,
             ppu: Ppu::new(),
             apu: Apu::new(),
             game_pad: GamePad::new(),
@@ -61,7 +61,7 @@ impl Interconnect {
         audio_sink: &mut Sink<AudioFrame>,
     ) -> (bool, bool) {
         // Execute n cycles on different hardware
-        let (nmi, dma) = self.ppu.cycles(cycles, &self.rom, frame_sink);
+        let (nmi, dma) = self.ppu.cycles(cycles, &self.cartridge, frame_sink);
         let irq = self.apu.cycles(cycles, audio_sink);
 
         // TODO: The DMA operation, as it is implemented here is instantaneous....
@@ -89,10 +89,11 @@ impl MemoryBus for Interconnect {
             Addr::RegOamData => self.ppu.write_oam_data_reg(value),
             Addr::RegPpuScroll => self.ppu.write_scroll_reg(value),
             Addr::RegPpuAddr => self.ppu.write_addr_reg(value),
-            Addr::RegPpuData => self.ppu.write_data_reg(&mut self.rom, value),
+            Addr::RegPpuData => self.ppu.write_data_reg(&mut self.cartridge, value),
             Addr::RegApuChannelControl(channel) => {
                 self.apu.write_channel_control_reg(channel, value)
             }
+            Addr::RegApuChannelUnused(_) => { /* unused */ }
             Addr::RegApuSweepUnit(channel) => self.apu.write_sweep_unit_reg(channel, value),
             Addr::RegApuTimerLow(channel) => self.apu.write_timer_low_reg(channel, value),
             Addr::RegApuLengthCouterTimerHigh(channel) => {
@@ -106,7 +107,7 @@ impl MemoryBus for Interconnect {
             Addr::RegApuStatus => self.apu.write_status_reg(value),
             Addr::RegJoy1 => self.game_pad.write_joy1_reg(value),
             Addr::RegJoy2 => self.apu.write_frame_counter_reg(value),
-            Addr::Cartridge(offset) => self.rom.write_byte(offset, value),
+            Addr::Cartridge(offset) => self.cartridge.write_byte(offset, value),
             _ => panic!("Unknown address {:?} (write byte)", addr),
         }
     }
@@ -118,10 +119,10 @@ impl MemoryBus for Interconnect {
             Addr::RegPpuStatus => self.ppu.read_status_reg(),
             Addr::RegOamData => self.ppu.read_oam_data_reg(),
             Addr::RegApuStatus => 0, // TODO
-            Addr::RegPpuData => self.ppu.read_data_reg(&mut self.rom),
+            Addr::RegPpuData => self.ppu.read_data_reg(&mut self.cartridge),
             Addr::RegJoy1 => self.game_pad.read_joy1_reg(),
             Addr::RegJoy2 => 0, // TODO
-            Addr::Cartridge(offset) => self.rom.read_byte(offset),
+            Addr::Cartridge(offset) => self.cartridge.read_byte(offset),
             _ => panic!("Unknown address {:?} (read byte)", addr),
         }
     }
