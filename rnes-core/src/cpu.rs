@@ -396,9 +396,13 @@ impl Cpu {
             0x61 => self.instr_adc(interconnect, AddrMode::IndX), // ADC (indirect,x)
             0x65 => self.instr_adc(interconnect, AddrMode::Zp),   // ADC zeropage
             0x66 => self.instr_ror(interconnect, AddrMode::Zp),   // ROR zeropage
-            0x68 => self.reg_a = self.pop_byte(interconnect),     // PLA
-            0x69 => self.instr_adc(interconnect, AddrMode::Imm),  // ADC imm
-            0x6A => self.instr_ror(interconnect, AddrMode::A),    // ROR A
+            0x68 => {
+                // PLA
+                self.reg_a = self.pop_byte(interconnect);
+                self.set_flags_sz(self.reg_a);
+            }
+            0x69 => self.instr_adc(interconnect, AddrMode::Imm), // ADC imm
+            0x6A => self.instr_ror(interconnect, AddrMode::A),   // ROR A
             0x6C => {
                 // JMP ind
                 let addr = self.load_immediate_word(interconnect);
@@ -741,7 +745,8 @@ impl Cpu {
             | if self.flag_decimal { 0b0000_1000 } else { 0 }
             | if self.flag_interrupt { 0b0000_0100 } else { 0 }
             | if self.flag_zero { 0b0000_0010 } else { 0 }
-            | if self.flag_carry { 0b0000_0001 } else { 0 };
+            | if self.flag_carry { 0b0000_0001 } else { 0 }
+            | 0b0010_0000; // b-flag
         self.push_byte(interconnect, status_reg);
     }
 
