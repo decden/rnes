@@ -198,6 +198,11 @@ impl Ppu {
     pub fn read_oam_data_reg(&mut self) -> u8 {
         self.oam[self.reg_oam_addr as usize]
     }
+	
+	pub fn read_addr_reg(&self) -> u8 {
+		// TODO: Is this the correct implementation?
+		self.reg_address as u8
+	}
 
     pub fn read_data_reg(&mut self, cartridge: &mut Cartridge) -> u8 {
         match self.reg_address {

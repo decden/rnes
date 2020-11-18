@@ -52,8 +52,8 @@ impl Cartridge {
         file.read(&mut chr_rom).unwrap();
 
         let mapper: Box<Mapper> = match mapper {
-            0 => Box::new(Mapper000::new(nametable_mirroring)),
-            1 => Box::new(Mapper001::new(nametable_mirroring, prg_rom_banks as usize)),
+            0 => Box::new(Mapper000::new(nametable_mirroring, prg_rom_banks, chr_rom_banks)),
+            1 => Box::new(Mapper001::new(nametable_mirroring, prg_rom_banks)),
             _ => panic!("Unsupported mapper type"),
         };
 

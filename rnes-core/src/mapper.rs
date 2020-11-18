@@ -22,11 +22,15 @@ pub trait Mapper {
 // Mapper 000 [NROM] implementation
 pub struct Mapper000 {
     nametable_mirroring: NametableMirroring,
+	prg_bank_count: usize,
+	chr_rom_banks: usize,
 }
 impl Mapper000 {
-    pub fn new(nametable_mirroring: NametableMirroring) -> Self {
+    pub fn new(nametable_mirroring: NametableMirroring, prg_bank_count: usize, chr_rom_banks: usize) -> Self {
         Self {
             nametable_mirroring,
+			prg_bank_count,
+			chr_rom_banks,
         }
     }
 
@@ -46,7 +50,7 @@ impl Mapper for Mapper000 {
     fn map_cpu_read(&self, addr: u16) -> MapperAddr {
         match addr {
             0x6000...0x7FFF => MapperAddr::PrgRam(addr as usize - 0x6000),
-            0x8000...0xFFFF => MapperAddr::PrgRom(addr as usize - 0x8000),
+            0x8000...0xFFFF => MapperAddr::PrgRom((addr as usize - 0x8000) & (self.prg_bank_count * 0x4000 - 1)),
             _ => panic!("Invalid mapper 0 address 0x{:04X}", addr),
         }
     }
@@ -60,9 +64,10 @@ impl Mapper for Mapper000 {
     }
 
     fn map_ppu_addr(&self, addr: u16) -> MapperPpuAddr {
-        match addr {
-            0x0000...0x1FFF => MapperPpuAddr::ChrRom(addr as usize),
-            0x2000...0x2FFF => MapperPpuAddr::Vram(self.map_nametable_addr(addr - 0x2000)),
+        match (addr, self.chr_rom_banks > 0) {
+            (0x0000...0x1FFF, true) => MapperPpuAddr::ChrRom(addr as usize),
+			(0x0000...0x1FFF, false) => MapperPpuAddr::ChrRam(addr as usize),
+            (0x2000...0x2FFF,_) => MapperPpuAddr::Vram(self.map_nametable_addr(addr - 0x2000)),
             _ => panic!("Invalid mapper 0 ppu address 0x{:04X}", addr),
         }
     }

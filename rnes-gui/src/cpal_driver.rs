@@ -97,7 +97,6 @@ impl CpalDriver {
             .next()
             .unwrap()
             .with_max_sample_rate();
-        format.sample_rate = SampleRate(41000);
 
         let buffer_frames = (sample_rate * desired_latency_ms / 1000 * 2) as usize;
         let ring_buffer = Arc::new(Mutex::new(RingBuffer {

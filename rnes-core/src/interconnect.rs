@@ -119,6 +119,7 @@ impl MemoryBus for Interconnect {
             Addr::RegPpuStatus => self.ppu.read_status_reg(),
             Addr::RegOamData => self.ppu.read_oam_data_reg(),
             Addr::RegApuStatus => 0, // TODO
+			Addr::RegPpuAddr => self.ppu.read_addr_reg(),
             Addr::RegPpuData => self.ppu.read_data_reg(&mut self.cartridge),
             Addr::RegJoy1 => self.game_pad.read_joy1_reg(),
             Addr::RegJoy2 => 0, // TODO
