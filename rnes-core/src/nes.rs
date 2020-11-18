@@ -23,8 +23,8 @@ impl Nes {
 
     pub fn step(
         &mut self,
-        video_sink: &mut Sink<VideoFrame>,
-        audio_sink: &mut Sink<AudioFrame>,
+        video_sink: &mut dyn Sink<VideoFrame>,
+        audio_sink: &mut dyn Sink<AudioFrame>,
     ) -> u64 {
         let ret = self.cpu.step(&mut self.interconnect);
 

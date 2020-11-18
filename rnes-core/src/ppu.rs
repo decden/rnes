@@ -167,14 +167,14 @@ impl Ppu {
         if self.reg_address_latch {
             panic!("Writing to incomplete address!!");
         }
-        // 0x2000 to 0x2fff is normally mapped to vram with a mirroring configuration provided by the cartridge...
+        // 0x2000 to 0x2fff is normally mapped to vram with a mirroring configuration provided by the cartridge..=
         match self.reg_address {
-            0x0000...0x1fff => cartridge.write_chr_byte(self.reg_address, value),
-            0x2000...0x3eff => {
+            0x0000..=0x1fff => cartridge.write_chr_byte(self.reg_address, value),
+            0x2000..=0x3eff => {
                 let address = cartridge.get_physical_nametable_addr(self.reg_address as u16);
                 self.vram[address as usize] = value;
             }
-            0x3f00...0x3fff => {
+            0x3f00..=0x3fff => {
                 self.palette[(self.reg_address & 0x1f) as usize] = value & 0b0011_1111;
                 if self.reg_address == 0x3f00
                     || self.reg_address == 0x3f04
@@ -198,20 +198,20 @@ impl Ppu {
     pub fn read_oam_data_reg(&mut self) -> u8 {
         self.oam[self.reg_oam_addr as usize]
     }
-	
-	pub fn read_addr_reg(&self) -> u8 {
-		// TODO: Is this the correct implementation?
-		self.reg_address as u8
-	}
+
+    pub fn read_addr_reg(&self) -> u8 {
+        // TODO: Is this the correct implementation?
+        self.reg_address as u8
+    }
 
     pub fn read_data_reg(&mut self, cartridge: &mut Cartridge) -> u8 {
         match self.reg_address {
-            0x0000...0x1FFF => {
+            0x0000..=0x1FFF => {
                 let buffered_value = self.ppudata_read_buffer;
                 self.ppudata_read_buffer = cartridge.read_chr_byte(self.reg_address);
                 buffered_value
             }
-            0x2000...0x3eff => {
+            0x2000..=0x3eff => {
                 let address = cartridge.get_physical_nametable_addr(self.reg_address as u16);
                 self.vram[address as usize]
             }
@@ -223,7 +223,7 @@ impl Ppu {
         &mut self,
         cycles: u64,
         cartridge: &Cartridge,
-        frame_sink: &mut Sink<VideoFrame>,
+        frame_sink: &mut dyn Sink<VideoFrame>,
     ) -> (bool, Option<u16>) {
         let ppu_cycles = cycles * 3;
 
@@ -236,7 +236,7 @@ impl Ppu {
             match scanline {
                 // Pre-render
                 0 => self.process_prerender_scanline(cartridge),
-                1...240 => self.process_scanline(cartridge, scanline - 1),
+                1..=240 => self.process_scanline(cartridge, scanline - 1),
                 241 => {
                     frame_sink.append(self.next_frame.take().unwrap());
                 }
@@ -337,7 +337,7 @@ impl Ppu {
                     if y != 0xFF {
                         for pos_x in x..min(x + 8, 256) {
                             // Dual tile index
-                            let mut tile_y = (scanline - 1 - y) as u8;
+                            let tile_y = (scanline - 1 - y) as u8;
                             debug_assert!(tile_y < 16);
                             let mut tile_x = pos_x - x;
                             let mut tile_y = tile_y;

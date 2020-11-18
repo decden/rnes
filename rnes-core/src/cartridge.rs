@@ -18,7 +18,7 @@ pub struct Cartridge {
     prg_ram: Box<[u8]>,
     chr_ram: Box<[u8]>,
 
-    mapper_impl: Box<Mapper>,
+    mapper_impl: Box<dyn Mapper>,
 }
 
 impl Cartridge {
@@ -51,8 +51,12 @@ impl Cartridge {
         let mut chr_rom = vec![0; chr_rom_banks * 0x2000].into_boxed_slice();
         file.read(&mut chr_rom).unwrap();
 
-        let mapper: Box<Mapper> = match mapper {
-            0 => Box::new(Mapper000::new(nametable_mirroring, prg_rom_banks, chr_rom_banks)),
+        let mapper: Box<dyn Mapper> = match mapper {
+            0 => Box::new(Mapper000::new(
+                nametable_mirroring,
+                prg_rom_banks,
+                chr_rom_banks,
+            )),
             1 => Box::new(Mapper001::new(nametable_mirroring, prg_rom_banks)),
             _ => panic!("Unsupported mapper type"),
         };

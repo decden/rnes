@@ -57,14 +57,14 @@ impl Interconnect {
     pub fn cycles(
         &mut self,
         cycles: u64,
-        frame_sink: &mut Sink<VideoFrame>,
-        audio_sink: &mut Sink<AudioFrame>,
+        frame_sink: &mut dyn Sink<VideoFrame>,
+        audio_sink: &mut dyn Sink<AudioFrame>,
     ) -> (bool, bool) {
         // Execute n cycles on different hardware
         let (nmi, dma) = self.ppu.cycles(cycles, &self.cartridge, frame_sink);
         let irq = self.apu.cycles(cycles, audio_sink);
 
-        // TODO: The DMA operation, as it is implemented here is instantaneous....
+        // TODO: The DMA operation, as it is implemented here is instantaneous..=.
         // TODO: What happens if the oam_addr_reg is initially != 0?
         if let Some(dma) = dma {
             self.ppu.write_oam_addr_reg(0);
@@ -119,7 +119,7 @@ impl MemoryBus for Interconnect {
             Addr::RegPpuStatus => self.ppu.read_status_reg(),
             Addr::RegOamData => self.ppu.read_oam_data_reg(),
             Addr::RegApuStatus => 0, // TODO
-			Addr::RegPpuAddr => self.ppu.read_addr_reg(),
+            Addr::RegPpuAddr => self.ppu.read_addr_reg(),
             Addr::RegPpuData => self.ppu.read_data_reg(&mut self.cartridge),
             Addr::RegJoy1 => self.game_pad.read_joy1_reg(),
             Addr::RegJoy2 => 0, // TODO

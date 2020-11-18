@@ -79,7 +79,7 @@ impl Apu {
         }
     }
 
-    pub fn cycles(&mut self, cycles: u64, audio_sink: &mut Sink<AudioFrame>) -> bool {
+    pub fn cycles(&mut self, cycles: u64, audio_sink: &mut dyn Sink<AudioFrame>) -> bool {
         let executed_apu_cycles = self.cpu_cycles_since_start / 2;
         self.cpu_cycles_since_start += cycles;
         let target_apu_cycles = self.cpu_cycles_since_start / 2;

@@ -74,9 +74,9 @@ pub enum Addr {
 pub fn map_addr(addr: u16) -> Addr {
     match addr {
         // Ram is mirrored 4 times
-        0x0000...0x1fff => Addr::Ram(addr & 0x07ff),
+        0x0000..=0x1fff => Addr::Ram(addr & 0x07ff),
 
-        0x2000...0x3fff => match (addr & 7) + 0x2000 {
+        0x2000..=0x3fff => match (addr & 7) + 0x2000 {
             REG_PPUCTRL => Addr::RegPpuCtrl,
             REG_PPUMASK => Addr::RegPpuMask,
             REG_PPUSTATUS => Addr::RegPpuStatus,
@@ -115,7 +115,7 @@ pub fn map_addr(addr: u16) -> Addr {
         REG_JOY1 => Addr::RegJoy1,
         REG_JOY2 => Addr::RegJoy2,
 
-        CARTRIDGE_BEGIN...CARTRIDGE_END => Addr::Cartridge(addr),
+        CARTRIDGE_BEGIN..=CARTRIDGE_END => Addr::Cartridge(addr),
         _ => panic!("Unknown physical address {:04X}", addr),
     }
 }

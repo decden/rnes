@@ -25,8 +25,8 @@ pub struct Emulator {
 
     pub nes: Nes,
 
-    audio_sink: Box<SinkRef<[AudioFrame]>>,
-    time_source: Box<TimeSource>,
+    audio_sink: Box<dyn SinkRef<[AudioFrame]>>,
+    time_source: Box<dyn TimeSource>,
     time_source_start_time_ns: u64,
 
     emulated_cycles: u64,
@@ -35,8 +35,8 @@ pub struct Emulator {
 impl Emulator {
     pub fn new(
         cartridge: Cartridge,
-        audio_sink: Box<SinkRef<[AudioFrame]>>,
-        time_source: Box<TimeSource>,
+        audio_sink: Box<dyn SinkRef<[AudioFrame]>>,
+        time_source: Box<dyn TimeSource>,
     ) -> Emulator {
         Emulator {
             window: Window::new(
